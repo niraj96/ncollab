@@ -1,7 +1,7 @@
 import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserService } from '../services/user';
+import { UserService } from '../services/user.service';
 import { Router } from '@angular/router';
 
 interface LoginUser {
@@ -71,7 +71,7 @@ export class Login  implements OnDestroy{
     this.userServ.loginUser({email: this.user.email, password: this.user.password})
     .subscribe({
 
-      next:(resp)=>{
+      next:(resp: unknown)=>{
         const {code, message, data} = resp as LoginSuccessResp
 
         alert(message);

@@ -169,7 +169,7 @@
           </div>
         </div>
         <div class="user-info">
-          <div class="user-name">Niraj</div>
+          <div class="user-name">{{ userProfileData.name }}</div>
           <div class="user-status" (click)="toggleStatusDropdown($event)">
             <span class="status-text">{{ getStatusText() }}</span>
             <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -350,7 +350,7 @@
             <div class="recent-users-list">
               <div class="recent-user-item" 
                    *ngFor="let user of getRecentUsers()" 
-                   (click)="selectChat(user.id, user.name, 'user')"
+                   (click)="selectChat(user.id, 'user')"
                    [class.active]="selectedChatId === user.id">
                 <div class="user-avatar">
                   <img *ngIf="user.avatar" [src]="user.avatar" [alt]="user.name" class="avatar-image">

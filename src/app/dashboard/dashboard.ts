@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertService } from '../shared/services/alert.service';
@@ -11,6 +11,7 @@ import { StatusModal } from './modal/status-modal/status-modal';
 import { AddUserToGroup } from './modal/add-user-to-group/add-user-to-group';
 import { DeleteAccountConfirm } from './modal/delete-account-confirm/delete-account-confirm';
 import { Main } from './main/main';
+import { UserService } from '../services/user.service';
 
 interface Message {
   sender: string;
@@ -31,6 +32,12 @@ interface User {
   email: string;
   role: string;
   department?: string;
+}
+
+interface ProfileData {
+  id: string;
+  name: string;
+  email: string;
 }
 
 interface InviteData {
@@ -78,10 +85,10 @@ interface UserStatus {
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
-export class Dashboard {
+export class Dashboard implements OnInit  {
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
 
-  constructor(private alertService: AlertService) {}
+  constructor(private alertService: AlertService, private readonly userService: UserService) {}
 
   // Modal states
   showAddUserModal: boolean = false;
@@ -98,7 +105,13 @@ export class Dashboard {
   showMainSearchSuggestions: boolean = false;
   mainSearchSuggestions: any[] = [];
   selectedSuggestionIndex: number = -1;
+  userProfileData: ProfileData = {
+    id: '',
+    name: '',
+    email: ''
+  };
 
+ 
   // Form data
   newUser: User = {
     id: '',
@@ -111,67 +124,23 @@ export class Dashboard {
 
   // Sample users for search suggestions
   availableUsers: MemberSuggestion[] = [
-    { id: '1', name: 'Sarah Johnson', email: 'sarah.johnson@company.com' },
-    { id: '2', name: 'Mike Chen', email: 'mike.chen@company.com' },
-    { id: '3', name: 'Alex Rodriguez', email: 'alex.rodriguez@company.com' },
-    { id: '4', name: 'Emily Davis', email: 'emily.davis@company.com' },
-    { id: '5', name: 'David Wilson', email: 'david.wilson@company.com' },
-    { id: '6', name: 'Lisa Brown', email: 'lisa.brown@company.com' },
-    { id: '7', name: 'John Smith', email: 'john.smith@company.com' },
-    { id: '8', name: 'Maria Garcia', email: 'maria.garcia@company.com' },
-    { id: '9', name: 'James Wilson', email: 'james.wilson@company.com' },
-    { id: '10', name: 'Jennifer Lee', email: 'jennifer.lee@company.com' },
-    { id: '11', name: 'Robert Taylor', email: 'robert.taylor@company.com' },
-    { id: '12', name: 'Amanda White', email: 'amanda.white@company.com' },
-    { id: '13', name: 'Christopher Brown', email: 'christopher.brown@company.com' },
-    { id: '14', name: 'Jessica Miller', email: 'jessica.miller@company.com' },
-    { id: '15', name: 'Daniel Anderson', email: 'daniel.anderson@company.com' },
-    { id: '16', name: 'Ashley Thomas', email: 'ashley.thomas@company.com' },
-    { id: '17', name: 'Matthew Jackson', email: 'matthew.jackson@company.com' },
-    { id: '18', name: 'Stephanie Harris', email: 'stephanie.harris@company.com' },
-    { id: '19', name: 'Andrew Martin', email: 'andrew.martin@company.com' },
-    { id: '20', name: 'Nicole Thompson', email: 'nicole.thompson@company.com' },
-    { id: '21', name: 'Kevin Garcia', email: 'kevin.garcia@company.com' },
-    { id: '22', name: 'Rachel Martinez', email: 'rachel.martinez@company.com' },
-    { id: '23', name: 'Brandon Robinson', email: 'brandon.robinson@company.com' },
-    { id: '24', name: 'Samantha Clark', email: 'samantha.clark@company.com' },
-    { id: '25', name: 'Tyler Rodriguez', email: 'tyler.rodriguez@company.com' }
+    { id: '1', name: 'Sarah Johnson', email: 'sarah.johnson@company.com' }
   ];
 
   // Sample groups data for search
   groups: any[] = [
-    { id: '1', name: 'Development Team', members: ['1', '2', '3'], description: 'Main development team' },
-    { id: '2', name: 'Design Team', members: ['4', '5'], description: 'UI/UX design team' },
-    { id: '3', name: 'Marketing', members: ['6', '7', '8'], description: 'Marketing and sales team' },
-    { id: '4', name: 'Management', members: ['9', '10'], description: 'Management team' }
+    { id: '1', name: 'Development Team', members: ['1', '2', '3'], description: 'Main development team' }
   ];
 
   // Sample channels data for search
   channels: any[] = [
-    { id: '1', name: 'general', description: 'General discussion for the team', members: ['1', '2', '3', '4', '5'] },
-    { id: '2', name: 'announcements', description: 'Important announcements and updates', members: ['1', '2', '3', '4', '5', '6', '7', '8'] },
-    { id: '3', name: 'random', description: 'Random chat and water cooler conversations', members: ['1', '2', '3', '4'] },
-    { id: '4', name: 'dev-updates', description: 'Development progress and technical discussions', members: ['1', '2', '3'] },
-    { id: '5', name: 'design-feedback', description: 'Design reviews and feedback sessions', members: ['4', '5', '1', '2'] }
+    { id: '1', name: 'general', description: 'General discussion for the team', members: ['1', '2', '3', '4', '5'] }
   ];
 
   // Recent users data - ordered by most recent activity
   recentUsers: any[] = [
     { id: '1', name: 'Sarah Johnson', avatar: '', status: 'available', lastSeen: '2 min ago', sortOrder: 1 },
-    { id: '15', name: 'Daniel Anderson', avatar: '', status: 'available', lastSeen: '5 min ago', sortOrder: 2 },
-    { id: '2', name: 'Mike Chen', avatar: '', status: 'busy', lastSeen: '5 min ago', sortOrder: 3 },
-    { id: '11', name: 'Robert Taylor', avatar: '', status: 'available', lastSeen: '10 min ago', sortOrder: 4 },
-    { id: '6', name: 'Lisa Brown', avatar: '', status: 'available', lastSeen: '15 min ago', sortOrder: 5 },
-    { id: '13', name: 'Christopher Brown', avatar: '', status: 'available', lastSeen: '20 min ago', sortOrder: 6 },
-    { id: '4', name: 'Emily Davis', avatar: '', status: 'available', lastSeen: '30 min ago', sortOrder: 7 },
-    { id: '9', name: 'James Wilson', avatar: '', status: 'busy', lastSeen: '45 min ago', sortOrder: 8 },
-    { id: '3', name: 'Alex Rodriguez', avatar: '', status: 'away', lastSeen: '1 hour ago', sortOrder: 9 },
-    { id: '8', name: 'Maria Garcia', avatar: '', status: 'available', lastSeen: '1 hour ago', sortOrder: 10 },
-    { id: '12', name: 'Amanda White', avatar: '', status: 'busy', lastSeen: '1 hour ago', sortOrder: 11 },
-    { id: '10', name: 'Jennifer Lee', avatar: '', status: 'away', lastSeen: '2 hours ago', sortOrder: 12 },
-    { id: '5', name: 'David Wilson', avatar: '', status: 'donotdisturb', lastSeen: '2 hours ago', sortOrder: 13 },
-    { id: '7', name: 'John Smith', avatar: '', status: 'invisible', lastSeen: '3 hours ago', sortOrder: 14 },
-    { id: '14', name: 'Jessica Miller', avatar: '', status: 'away', lastSeen: '4 hours ago', sortOrder: 15 }
+    { id: '15', name: 'Daniel Anderson', avatar: '', status: 'available', lastSeen: '5 min ago', sortOrder: 2 }
   ];
 
   // Status management
@@ -191,11 +160,50 @@ export class Dashboard {
   selectedChatName: string = '';
   selectedChatType: 'user' | 'group' | 'channel' = 'user';
 
-  selectChat(chatId: string, chatName?: string, chatType?: string): void {
+  ngOnInit(): void {
+
+    this.userService.userProfile().subscribe({
+      next: (res) => {
+          console.log('User profile data:', res);
+          this.userProfileData = (res as any).data as ProfileData;
+      },
+      error: (err) => {
+        console.error('Error fetching profile data:', err);
+      }
+    });
+  
+    // Initialize with a default chat
+    this.userService.availabeUser().subscribe({
+      next: (res) => {
+
+          console.log('Available users:', res);
+          const {data} = res as any;
+         
+         this.recentUsers = data.map((user: any, index: number) => ({
+          id: user.id,
+          name: user.name,
+          avatar: '',
+          status: 'available',
+          lastSeen: 'Online',
+          sortOrder: index + 1
+         }));
+         if(this.recentUsers.length > 0){
+          this.selectChat(this.recentUsers[0].id, 'user');
+         }
+        
+      },
+      error: (err) => {
+        console.error('Error fetching users:', err);
+      }
+    });
+  }
+
+  selectChat(chatId: string, chatType?: string): void {
     // Set selected chat info
     this.selectedChatId = chatId;
-    this.selectedChatName = chatName || this.getChatDisplayName(chatId);
-    this.selectedChatType = (chatType as 'user' | 'group' | 'channel') || this.getChatType(chatId);
+    this.userService.setSelectedUserId(chatId);
+    this.getChatDisplayName(chatId);
+    this.selectedChatType = chatType as 'user' | 'group' | 'channel' ;
 
     // Load messages for selected chat
     this.loadMessagesForChat(chatId);
@@ -205,29 +213,47 @@ export class Dashboard {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   }
 
-  getChatDisplayName(chatId: string): string {
-    const chatNames: { [key: string]: string } = {
-      'sarah': 'Sarah Johnson',
-      'mike': 'Mike Chen',
-      'alex': 'Alex Rodriguez',
-      'dev-team': 'Dev Team',
-      'design-team': 'Design Team',
-      'general': 'general',
-      'announcements': 'announcements',
-      'random': 'random'
-    };
-    return chatNames[chatId] || chatId;
+  getChatDisplayName(chatId: string): void {
+    // const chatNames: { [key: string]: string } = {
+    //   'sarah': 'Sarah Johnson',
+    //   'mike': 'Mike Chen',
+    //   'alex': 'Alex Rodriguez',
+    //   'dev-team': 'Dev Team',
+    //   'design-team': 'Design Team',
+    //   'general': 'general',
+    //   'announcements': 'announcements',
+    //   'random': 'random'
+    // };
+    // return chatNames[chatId] || chatId;
+
+    console.log('Finding display name for chatId:', chatId, this.recentUsers);
+
+    this.userService.userData(chatId).subscribe({
+      next:(resp: unknown)=>{
+        const {code, message, data} = resp as any;
+        console.log('User data:', data);
+         this.selectedChatName = data.name;
+      },
+
+      error:(err)=>{
+        console.log('Error found', err);
+        return chatId;
+      }
+
+    })
+
+    
   }
 
-  getChatType(chatId: string): 'user' | 'group' | 'channel' {
-    if (['sarah', 'mike', 'alex'].includes(chatId)) {
-      return 'user';
-    } else if (['dev-team', 'design-team'].includes(chatId)) {
-      return 'group';
-    } else {
-      return 'channel';
-    }
-  }
+  // getChatType(chatId: string, chatType: string): 'user' | 'group' | 'channel' {
+  //   if (['sarah', 'mike', 'alex'].includes(chatId)) {
+  //     return 'user';
+  //   } else if (['dev-team', 'design-team'].includes(chatId)) {
+  //     return 'group';
+  //   } else {
+  //     return 'channel';
+  //   }
+  // }
 
   getGroupMembers(): string {
     return '5'; // Sample data
@@ -490,15 +516,15 @@ export class Dashboard {
     // Handle selection based on type
     switch (type) {
       case 'user':
-        this.selectChat(item.id, item.name, 'user');
+        this.selectChat(item.id, 'user');
         this.alertService.info('User Selected', `Opened chat with ${item.name}`);
         break;
       case 'group':
-        this.selectChat(item.id, item.name, 'group');
+        this.selectChat(item.id, 'group');
         this.alertService.info('Group Selected', `Opened group ${item.name}`);
         break;
       case 'channel':
-        this.selectChat(item.id, item.name, 'channel');
+        this.selectChat(item.id, 'channel');
         this.alertService.info('Channel Selected', `Opened channel #${item.name}`);
         break;
     }

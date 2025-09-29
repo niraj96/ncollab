@@ -1,7 +1,10 @@
-import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AlertService } from '../../shared/services/alert.service';
+import {SocketService} from '../../services/socket.service';
+import { UserService } from '../../services/user.service';
+import { firstValueFrom } from 'rxjs';
 
 interface Message {
   sender: string;
@@ -22,10 +25,48 @@ interface MessageGroup {
   templateUrl: './main.html',
   styleUrl: './main.css'
 })
-export class Main implements AfterViewInit {
-  @ViewChild('messagesContainer') messagesContainer!: ElementRef;
+export class Main {
+  
+  constructor(private alertService: AlertService, private socketService: SocketService, private userService: UserService){   
 
-  constructor(private alertService: AlertService) {}
+  }
+
+  ngOnInit(){
+    this.socketService.connect()
+
+    this.socketService.listen("chat message", (data: any)=>{
+      console.log("after listen", data);
+
+      this.messageGroups[0].messages.push( {
+        sender: this.selectedChatId != data.sender? 'You' : data.sender,
+        text: data.text,
+        time: new Date(data.time).toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        isOwn: this.selectedChatId != data.sender ? true : false
+      });
+
+    
+
+    })
+    
+    this.userService.getSelectedUserId().subscribe(userId=>{
+      console.log("Selected user ID changed:", userId);
+      this.selectedChatId = userId || '';
+      this.getChatDisplayName(this.selectedChatId);
+      this.selectedChatType = userId ? this.getChatType(userId) : 'channel';
+      // Load messages for selected chat
+      if(userId){
+        this.loadMessagesForChat(userId);
+      }
+      // Scroll to bottom of messages
+      setTimeout(() => {
+        this.scrollToBottom();
+      }, 100);
+    })
+  }
 
   ngAfterViewInit(): void {
     // Scroll to bottom when component initializes
@@ -44,24 +85,13 @@ export class Main implements AfterViewInit {
     {
       date: 'Today',
       messages: [
-        {
-          sender: 'Sarah Johnson',
-          text: 'Hey, how\'s the project going?',
-          time: '2:30 PM',
-          isOwn: false
-        },
-        {
-          sender: 'You',
-          text: 'Great! Just finished the dashboard component. How about you?',
-          time: '2:32 PM',
-          isOwn: true
-        },
-        {
-          sender: 'Sarah Johnson',
-          text: 'Awesome! I\'m working on the backend API. Should be ready by tomorrow.',
-          time: '2:35 PM',
-          isOwn: false
-        }
+        // {
+        //   sender: 'Sarah Johnson',
+        //   text: 'Hey, how\'s the project going?',
+        //   time: '2:30 PM',
+        //   isOwn: false
+        // },
+       
       ]
     }
   ];
@@ -69,7 +99,7 @@ export class Main implements AfterViewInit {
   selectChat(chatId: string, chatName?: string, chatType?: string): void {
     // Set selected chat info
     this.selectedChatId = chatId;
-    this.selectedChatName = chatName || this.getChatDisplayName(chatId);
+    this.getChatDisplayName(chatId);
     this.selectedChatType = (chatType as 'user' | 'group' | 'channel') || this.getChatType(chatId);
 
     // Load messages for selected chat
@@ -84,18 +114,32 @@ export class Main implements AfterViewInit {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   }
 
-  getChatDisplayName(chatId: string): string {
-    const chatNames: { [key: string]: string } = {
-      'sarah': 'Sarah Johnson',
-      'mike': 'Mike Chen',
-      'alex': 'Alex Rodriguez',
-      'dev-team': 'Dev Team',
-      'design-team': 'Design Team',
-      'general': 'general',
-      'announcements': 'announcements',
-      'random': 'random'
-    };
-    return chatNames[chatId] || chatId;
+  getChatDisplayName(chatId: string): void {
+    // const chatNames: { [key: string]: string } = {
+    //   'sarah': 'Sarah Johnson',
+    //   'mike': 'Mike Chen',
+    //   'alex': 'Alex Rodriguez',
+    //   'dev-team': 'Dev Team',
+    //   'design-team': 'Design Team',
+    //   'general': 'general',
+    //   'announcements': 'announcements',
+    //   'random': 'random'
+    // };
+    // return chatNames[chatId] || chatId;
+
+    this.userService.userData(chatId).subscribe({
+      next:(resp: unknown)=>{
+        const {code, message, data} = resp as any;
+        console.log('User data:', data);
+         this.selectedChatName = data.name;
+      },
+
+      error:(err)=>{
+        console.log('Error found', err);
+        return chatId;
+      }
+
+    })
   }
 
   getChatType(chatId: string): 'user' | 'group' | 'channel' {
@@ -122,7 +166,19 @@ export class Main implements AfterViewInit {
     if (!this.newMessage.trim()) {
       return;
     }
-    
+
+
+    const messagePayload = {      
+      chatId: this.selectedChatId,
+      message: this.newMessage.trim()
+    };
+
+    console.log('Sending message:', messagePayload);
+    // Emit message via SocketService
+
+    this.socketService.emit("chat message", messagePayload);
+
+   
     // If no chat is selected, set a default chat name
     if (!this.selectedChatName) {
       this.selectedChatName = 'General Chat';
@@ -155,10 +211,10 @@ export class Main implements AfterViewInit {
       this.scrollToBottom();
     }, 100);
 
-    // Simulate response (in a real app, this would come from the server)
-    setTimeout(() => {
-      this.simulateResponse();
-    }, 1000);
+    // // Simulate response (in a real app, this would come from the server)
+    // setTimeout(() => {
+    //   this.simulateResponse();
+    // }, 1000);
   }
 
   private simulateResponse(): void {
@@ -202,10 +258,16 @@ export class Main implements AfterViewInit {
   }
 
   private scrollToBottom(): void {
-    if (this.messagesContainer) {
-      const element = this.messagesContainer.nativeElement;
-      element.scrollTop = element.scrollHeight;
-    }
+    // if (this.messagesContainer) {
+    //   const element = this.messagesContainer.nativeElement;
+    //   element.scrollTop = element.scrollHeight;
+    // }
+  }
+
+
+  ngOnDestroy(){
+    this.socketService.disconnect();
+    this.userService.getSelectedUserId().unsubscribe();
   }
 
 
