@@ -1,0 +1,99 @@
+<div class="modal-overlay" *ngIf="showCreateChannelModal" (click)="onCloseModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Create New Channel</h2>
+        <button class="close-btn" (click)="onCloseModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form (ngSubmit)="onCreateChannel()" #createChannelForm="ngForm">
+          <div class="form-group">
+            <label for="channelName">Channel Name</label>
+            <div class="channel-name-input">
+              <span class="channel-prefix">#</span>
+              <input 
+                type="text" 
+                id="channelName" 
+                name="channelName" 
+                [(ngModel)]="newChannel.name" 
+                required 
+                class="form-input channel-input"
+                placeholder="channel-name"
+                pattern="[a-z0-9-]+"
+                title="Channel name can only contain lowercase letters, numbers, and hyphens"
+              >
+            </div>
+            <small class="form-hint">Channel names must be lowercase and can contain letters, numbers, and hyphens</small>
+          </div>
+          <div class="form-group">
+            <label for="channelDescription">Description</label>
+            <textarea 
+              id="channelDescription" 
+              name="channelDescription" 
+              [(ngModel)]="newChannel.description" 
+              class="form-textarea"
+              placeholder="What's this channel about?"
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="newChannel.isPrivate" 
+                name="isPrivate"
+              >
+              <span class="checkmark"></span>
+              Private channel (only members can see and join)
+            </label>
+          </div>
+          <div class="form-group" *ngIf="newChannel.isPrivate">
+            <label for="channelMembers">Add Members</label>
+            <div class="member-selector">
+              <div class="selected-members">
+                <div class="member-tag" *ngFor="let member of selectedChannelMembers">
+                  <span class="member-name">{{ member.name }}</span>
+                  <button type="button" class="remove-member" (click)="removeChannelMember(member)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="member-search">
+                <input 
+                  type="text" 
+                  class="form-input" 
+                  placeholder="Search and add members..."
+                  [(ngModel)]="channelMemberSearchQuery"
+                  (input)="searchChannelMembers()"
+                >
+                <div class="member-suggestions" *ngIf="channelMemberSuggestions.length > 0">
+                  <div 
+                    class="member-suggestion" 
+                    *ngFor="let suggestion of channelMemberSuggestions"
+                    (click)="addChannelMember(suggestion)"
+                  >
+                    <div class="suggestion-avatar">
+                      <span class="avatar-text">{{ getInitials(suggestion.name) }}</span>
+                    </div>
+                    <div class="suggestion-info">
+                      <div class="suggestion-name">{{ suggestion.name }}</div>
+                      <div class="suggestion-email">{{ suggestion.email }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="onCloseModal()">Cancel</button>
+        <button type="button" class="btn-primary" (click)="onCreateChannel()" [disabled]="!createChannelForm.form.valid">Create Channel</button>
+      </div>
+    </div>
+  </div>

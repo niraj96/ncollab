@@ -1,0 +1,22 @@
+<div class="alert-container" *ngIf="showAlert">
+  <div class="alert" [ngClass]="alertClass">
+    <div class="alert-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path [attr.d]="getIconPath()" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    
+    <div class="alert-content">
+      <div class="alert-title" *ngIf="config.title">{{ config.title }}</div>
+      <div class="alert-message">{{ config.message }}</div>
+    </div>
+    
+    <div class="alert-actions" *ngIf="config.showCloseButton">
+      <button class="alert-close-btn" (click)="dismiss()" aria-label="Close alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

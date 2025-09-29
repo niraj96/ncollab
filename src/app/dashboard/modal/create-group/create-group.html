@@ -1,0 +1,93 @@
+<div class="modal-overlay" *ngIf="showCreateGroupModal" (click)="onCloseModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Create New Group</h2>
+        <button class="close-btn" (click)="onCloseModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form (ngSubmit)="onCreateGroup()" #createGroupForm="ngForm">
+          <div class="form-group">
+            <label for="groupName">Group Name</label>
+            <input 
+              type="text" 
+              id="groupName" 
+              name="groupName" 
+              [(ngModel)]="newGroup.name" 
+              required 
+              class="form-input"
+              placeholder="Enter group name"
+            >
+          </div>
+          <div class="form-group">
+            <label for="groupDescription">Description</label>
+            <textarea 
+              id="groupDescription" 
+              name="groupDescription" 
+              [(ngModel)]="newGroup.description" 
+              class="form-textarea"
+              placeholder="Enter group description (optional)"
+              rows="3"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="groupMembers">Add Members</label>
+            <div class="member-selector">
+              <div class="selected-members">
+                <div class="member-tag" *ngFor="let member of selectedMembers">
+                  <span class="member-name">{{ member.name }}</span>
+                  <button type="button" class="remove-member" (click)="removeMember(member)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="member-search">
+                <input 
+                  type="text" 
+                  class="form-input" 
+                  placeholder="Search and add members..."
+                  [(ngModel)]="memberSearchQuery"
+                  (input)="searchMembers()"
+                >
+                <div class="member-suggestions" *ngIf="memberSuggestions.length > 0">
+                  <div 
+                    class="member-suggestion" 
+                    *ngFor="let suggestion of memberSuggestions"
+                    (click)="addMember(suggestion)"
+                  >
+                    <div class="suggestion-avatar">
+                      <span class="avatar-text">{{ getInitials(suggestion.name) }}</span>
+                    </div>
+                    <div class="suggestion-info">
+                      <div class="suggestion-name">{{ suggestion.name }}</div>
+                      <div class="suggestion-email">{{ suggestion.email }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="newGroup.isPrivate" 
+                name="isPrivate"
+              >
+              <span class="checkmark"></span>
+              Private group (only members can see and join)
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="onCloseModal()">Cancel</button>
+        <button type="button" class="btn-primary" (click)="onCreateGroup()" [disabled]="!createGroupForm.form.valid || selectedMembers.length === 0">Create Group</button>
+      </div>
+    </div>
+  </div>

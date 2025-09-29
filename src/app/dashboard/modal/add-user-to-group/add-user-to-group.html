@@ -1,0 +1,122 @@
+<div class="modal-overlay" *ngIf="showAddUserToGroupModal" (click)="onCloseModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="modal-title">Add User to Group</h3>
+      <button class="close-btn" (click)="onCloseModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="groupSelect">Select Group</label>
+        <select id="groupSelect" [(ngModel)]="selectedGroupForUser" class="form-select">
+          <option value="">Choose a group...</option>
+          <option *ngFor="let group of groups" [value]="group.id">{{ group.name }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Add User Type</label>
+        <div class="user-type-tabs">
+          <button 
+            class="tab-btn" 
+            [class.active]="userAddType === 'existing'"
+            (click)="setUserAddType('existing')">
+            Existing User
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.active]="userAddType === 'guest'"
+            (click)="setUserAddType('guest')">
+            Guest User
+          </button>
+        </div>
+      </div>
+
+      <!-- Existing User Section -->
+      <div *ngIf="userAddType === 'existing'" class="user-section">
+        <div class="form-group">
+          <label for="userSearch">Search Users</label>
+          <div class="member-search">
+            <input 
+              type="text" 
+              id="userSearch"
+              [(ngModel)]="userSearchQuery" 
+              (input)="searchUsers()"
+              placeholder="Search by name or email..."
+              class="form-input">
+            <div class="member-suggestions" *ngIf="userSuggestions.length > 0">
+              <div 
+                class="member-suggestion" 
+                *ngFor="let user of userSuggestions"
+                (click)="selectUserForGroup(user)">
+                <div class="user-avatar-small">
+                  <span class="avatar-initials">{{ getInitials(user.name) }}</span>
+                </div>
+                <div class="user-details">
+                  <div class="user-name">{{ user.name }}</div>
+                  <div class="user-email">{{ user.email }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="selected-users" *ngIf="selectedUsersForGroup.length > 0">
+          <label>Selected Users</label>
+          <div class="selected-members">
+            <div class="member-tag" *ngFor="let user of selectedUsersForGroup">
+              <span class="member-name">{{ user.name }}</span>
+              <button class="remove-member" (click)="removeUserFromGroup(user)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guest User Section -->
+      <div *ngIf="userAddType === 'guest'" class="user-section">
+        <div class="form-group">
+          <label for="guestName">Guest Name</label>
+          <input 
+            type="text" 
+            id="guestName"
+            [(ngModel)]="guestUser.name" 
+            placeholder="Enter guest name..."
+            class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="guestEmail">Guest Email (Optional)</label>
+          <input 
+            type="email" 
+            id="guestEmail"
+            [(ngModel)]="guestUser.email" 
+            placeholder="Enter guest email..."
+            class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="guestRole">Role in Group</label>
+          <select id="guestRole" [(ngModel)]="guestUser.role" class="form-select">
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+            <option value="moderator">Moderator</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="onCloseModal()">Cancel</button>
+      <button 
+        class="btn btn-primary" 
+        (click)="onAddUserToGroup()"
+        [disabled]="!canAddUserToGroup()">
+        Add to Group
+      </button>
+    </div>
+  </div>
+</div>

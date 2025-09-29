@@ -1,0 +1,679 @@
+<!-- nCollab Dashboard - Teams-inspired Interface -->
+<div class="dashboard-container" (click)="closeStatusDropdown()">
+  <!-- Top Navigation Bar -->
+  <nav class="top-navbar">
+    <div class="nav-left">
+      <div class="nav-brand">
+        <div class="ncollab-logo">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="18" fill="#464EB8"/>
+            <circle cx="14" cy="16" r="3" fill="white"/>
+            <circle cx="26" cy="16" r="3" fill="white"/>
+            <circle cx="20" cy="24" r="3" fill="white"/>
+            <path d="M14 16L20 24" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M26 16L20 24" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M14 16L26 16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="8" y="8" width="8" height="6" rx="3" fill="#6264F7"/>
+            <path d="M12 14L10 16L12 18" stroke="#6264F7" stroke-width="1" fill="none"/>
+          </svg>
+        </div>
+        <span class="brand-text"><span class="highlight-n">n</span>Collab</span>
+      </div>
+    </div>
+    <div class="nav-center">
+      <div class="search-container">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+          <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Search messages, people, or files..." 
+          class="search-input"
+          [(ngModel)]="mainSearchQuery"
+          (input)="searchMain()"
+          (focus)="showMainSearchSuggestions = true"
+          (blur)="hideMainSearchSuggestions()"
+          (keydown.arrowdown)="navigateSearchSuggestions('down', $event)"
+          (keydown.arrowup)="navigateSearchSuggestions('up', $event)"
+          (keydown.enter)="selectSearchSuggestion($event)">
+        
+        <!-- Main Search Suggestions Dropdown -->
+        <div class="main-search-suggestions" *ngIf="showMainSearchSuggestions && mainSearchSuggestions.length > 0">
+          <div class="search-suggestions-header">
+            <span class="suggestions-title">Search Results</span>
+            <button class="close-suggestions" (click)="hideMainSearchSuggestions()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Users Section -->
+          <div class="suggestion-section" *ngIf="getSearchSuggestionsByType('user').length > 0">
+            <div class="section-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              <span>People</span>
+            </div>
+            <div 
+              class="suggestion-item" 
+              *ngFor="let user of getSearchSuggestionsByType('user'); let i = index"
+              [class.selected]="selectedSuggestionIndex === i"
+              (click)="selectSearchItem(user, 'user')">
+              <div class="suggestion-avatar">
+                <span class="avatar-initials">{{ getInitials(user.name) }}</span>
+              </div>
+              <div class="suggestion-content">
+                <div class="suggestion-name">{{ user.name }}</div>
+                <div class="suggestion-subtitle">{{ user.email }}</div>
+              </div>
+              <div class="suggestion-type">
+                <span class="type-badge user">User</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Groups Section -->
+          <div class="suggestion-section" *ngIf="getSearchSuggestionsByType('group').length > 0">
+            <div class="section-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              <span>Groups</span>
+            </div>
+            <div 
+              class="suggestion-item" 
+              *ngFor="let group of getSearchSuggestionsByType('group'); let i = index"
+              [class.selected]="selectedSuggestionIndex === (getSearchSuggestionsByType('user').length + i)"
+              (click)="selectSearchItem(group, 'group')">
+              <div class="suggestion-avatar group">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="suggestion-content">
+                <div class="suggestion-name">{{ group.name }}</div>
+                <div class="suggestion-subtitle">{{ group.description }}</div>
+              </div>
+              <div class="suggestion-type">
+                <span class="type-badge group">Group</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Channels Section -->
+          <div class="suggestion-section" *ngIf="getSearchSuggestionsByType('channel').length > 0">
+            <div class="section-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z" fill="currentColor"/>
+              </svg>
+              <span>Channels</span>
+            </div>
+            <div 
+              class="suggestion-item" 
+              *ngFor="let channel of getSearchSuggestionsByType('channel'); let i = index"
+              [class.selected]="selectedSuggestionIndex === (getSearchSuggestionsByType('user').length + getSearchSuggestionsByType('group').length + i)"
+              (click)="selectSearchItem(channel, 'channel')">
+              <div class="suggestion-avatar channel">
+                <span class="channel-hash">#</span>
+              </div>
+              <div class="suggestion-content">
+                <div class="suggestion-name">{{ channel.name }}</div>
+                <div class="suggestion-subtitle">{{ channel.description }}</div>
+              </div>
+              <div class="suggestion-type">
+                <span class="type-badge channel">Channel</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- No Results -->
+          <div class="no-results" *ngIf="mainSearchSuggestions.length === 0 && mainSearchQuery.trim().length > 0">
+            <div class="no-results-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="no-results-text">No results found for "{{ mainSearchQuery }}"</div>
+            <div class="no-results-subtitle">Try searching for people, groups, or channels</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="nav-button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+      <button class="nav-button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+      <div class="user-profile">
+        <div class="user-avatar" (click)="toggleStatusDropdown($event)">
+          <span class="avatar-text">N</span>
+          <div class="status-indicator" [class]="'status-' + currentStatus.status">
+            <div class="status-dot"></div>
+          </div>
+        </div>
+        <div class="user-info">
+          <div class="user-name">Niraj</div>
+          <div class="user-status" (click)="toggleStatusDropdown($event)">
+            <span class="status-text">{{ getStatusText() }}</span>
+            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+        <!-- Status Dropdown -->
+        <div class="status-dropdown" *ngIf="showStatusDropdown" (click)="$event.stopPropagation()">
+          <div class="status-options">
+            <div class="status-option" (click)="setStatus('available')" [class.active]="currentStatus.status === 'available'">
+              <div class="status-indicator status-available">
+                <div class="status-dot"></div>
+              </div>
+              <div class="status-details">
+                <div class="status-name">Available</div>
+                <div class="status-description">You appear available to others</div>
+              </div>
+            </div>
+            <div class="status-option" (click)="setStatus('busy')" [class.active]="currentStatus.status === 'busy'">
+              <div class="status-indicator status-busy">
+                <div class="status-dot"></div>
+              </div>
+              <div class="status-details">
+                <div class="status-name">Busy</div>
+                <div class="status-description">You appear busy to others</div>
+              </div>
+            </div>
+            <div class="status-option" (click)="setStatus('away')" [class.active]="currentStatus.status === 'away'">
+              <div class="status-indicator status-away">
+                <div class="status-dot"></div>
+              </div>
+              <div class="status-details">
+                <div class="status-name">Away</div>
+                <div class="status-description">You appear away to others</div>
+              </div>
+            </div>
+            <div class="status-option" (click)="setStatus('donotdisturb')" [class.active]="currentStatus.status === 'donotdisturb'">
+              <div class="status-indicator status-donotdisturb">
+                <div class="status-dot"></div>
+              </div>
+              <div class="status-details">
+                <div class="status-name">Do not disturb</div>
+                <div class="status-description">You appear busy and won't receive notifications</div>
+              </div>
+            </div>
+            <div class="status-option" (click)="setStatus('invisible')" [class.active]="currentStatus.status === 'invisible'">
+              <div class="status-indicator status-invisible">
+                <div class="status-dot"></div>
+              </div>
+              <div class="status-details">
+                <div class="status-name">Invisible</div>
+                <div class="status-description">You appear offline to others</div>
+              </div>
+            </div>
+          </div>
+          <div class="status-divider"></div>
+          <div class="status-actions">
+            <button class="status-action-btn" (click)="openStatusModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Set status message
+            </button>
+          </div>
+          <div class="status-divider"></div>
+          <div class="status-actions">
+            <button class="status-action-btn logout-btn" (click)="logout()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2"/>
+                <polyline points="16,17 21,12 16,7" stroke="currentColor" stroke-width="2"/>
+                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Logout
+            </button>
+            <button class="status-action-btn delete-btn" (click)="openDeleteAccountModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
+                <line x1="10" y1="11" x2="10" y2="17" stroke="currentColor" stroke-width="2"/>
+                <line x1="14" y1="11" x2="14" y2="17" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Delete Account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Dashboard Layout -->
+  <div class="dashboard-layout">
+    <!-- Left Sidebar -->
+    <aside class="sidebar" [class.collapsed]="isCollapsed">
+      <div class="sidebar-header">
+        <div class="header-left">
+          <button class="collapse-btn" (click)="toggleSidebar()" title="{{ isCollapsed ? 'Expand sidebar' : 'Collapse sidebar' }}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <h3 class="sidebar-title" *ngIf="!isCollapsed">{{ getCurrentMenuTitle() }}</h3>
+        </div>
+        <div class="header-actions" *ngIf="!isCollapsed">
+          <button class="action-btn" (click)="openModal('addUser')" title="Add User">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+              <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M20 8v6M23 11H17" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+          <button class="action-btn" (click)="openModal('inviteUser')" title="Invite Users">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" stroke-width="2"/>
+              <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+          <button class="action-btn" (click)="openModal('createGroup')" title="Create Group">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+          <button class="action-btn" (click)="openModal('createChannel')" title="Create Channel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+              <path d="M13 8H7M17 12H7" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible Menu -->
+      <div class="menu-container" [class.collapsed]="isCollapsed">
+        <div class="menu-item" (click)="setActiveMenu('chats')" [class.active]="activeMenu === 'chats'" [title]="isCollapsed ? 'Chats' : ''">
+          <div class="menu-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="menu-text" *ngIf="!isCollapsed">Chats</span>
+          <div class="menu-count" *ngIf="!isCollapsed && getChatCount() > 0">{{ getChatCount() }}</div>
+        </div>
+
+        <div class="menu-item" (click)="setActiveMenu('groups')" [class.active]="activeMenu === 'groups'" [title]="isCollapsed ? 'Groups' : ''">
+          <div class="menu-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="menu-text" *ngIf="!isCollapsed">Groups</span>
+          <div class="menu-count" *ngIf="!isCollapsed && getGroupCount() > 0">{{ getGroupCount() }}</div>
+        </div>
+
+        <div class="menu-item" (click)="setActiveMenu('channels')" [class.active]="activeMenu === 'channels'" [title]="isCollapsed ? 'Channels' : ''">
+          <div class="menu-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/>
+              <path d="M13 8H7M17 12H7" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="menu-text" *ngIf="!isCollapsed">Channels</span>
+          <div class="menu-count" *ngIf="!isCollapsed && getChannelCount() > 0">{{ getChannelCount() }}</div>
+        </div>
+      </div>
+
+      <!-- Content based on active menu -->
+      <!-- Chats View -->
+      <div class="content-section" *ngIf="activeMenu === 'chats'">
+        <div class="chat-section">
+          <div class="section-header">
+            <h4 class="section-title">Recent Users</h4>
+          </div>
+          <div class="recent-users-container">
+            <div class="recent-users-list">
+              <div class="recent-user-item" 
+                   *ngFor="let user of getRecentUsers()" 
+                   (click)="selectChat(user.id, user.name, 'user')"
+                   [class.active]="selectedChatId === user.id">
+                <div class="user-avatar">
+                  <img *ngIf="user.avatar" [src]="user.avatar" [alt]="user.name" class="avatar-image">
+                  <span *ngIf="!user.avatar" class="avatar-initials">{{ getInitials(user.name) }}</span>
+                  <div class="status-indicator" [class]="'status-' + user.status">
+                    <div class="status-dot"></div>
+                  </div>
+                </div>
+                <div class="user-info">
+                  <div class="user-name">{{ user.name }}</div>
+                  <div class="user-status-text">{{ getStatusText(user.status) }}</div>
+                </div>
+                <div class="user-meta">
+                  <div class="last-seen">{{ user.lastSeen }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Groups View -->
+      <div class="content-section" *ngIf="activeMenu === 'groups'">
+        <div class="chat-section">
+          <div class="section-header">
+            <h4 class="section-title">All Groups</h4>
+            <button class="action-btn" (click)="openModal('addUserToGroup')" title="Add User to Group">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                <path d="M20 8v6M23 11H17" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+          <div class="chat-list">
+            <div class="chat-item" (click)="selectChat('dev-team')">
+              <div class="chat-avatar group">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 21V19C17 17.9 16.1 17 15 17H9C7.9 17 7 17.9 7 19V21" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">Dev Team</div>
+                <div class="chat-preview">Niraj: Ready for the next sprint! 💪</div>
+                <div class="group-members">5 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">2:35 PM</span>
+                <div class="unread-badge">5</div>
+              </div>
+            </div>
+
+            <div class="chat-item" (click)="selectChat('design-team')">
+              <div class="chat-avatar group">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 21V19C17 17.9 16.1 17 15 17H9C7.9 17 7 17.9 7 19V21" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">Design Team</div>
+                <div class="chat-preview">New mockups are ready for review</div>
+                <div class="group-members">3 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">11:30 AM</span>
+              </div>
+            </div>
+
+            <div class="chat-item" (click)="selectChat('marketing-team')">
+              <div class="chat-avatar group">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 21V19C17 17.9 16.1 17 15 17H9C7.9 17 7 17.9 7 19V21" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">Marketing Team</div>
+                <div class="chat-preview">Campaign launch next week</div>
+                <div class="group-members">4 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">9:45 AM</span>
+                <div class="unread-badge">3</div>
+              </div>
+            </div>
+
+            <div class="chat-item" (click)="selectChat('project-alpha')">
+              <div class="chat-avatar group">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M17 21V19C17 17.9 16.1 17 15 17H9C7.9 17 7 17.9 7 19V21" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">Project Alpha</div>
+                <div class="chat-preview">Sprint planning meeting notes</div>
+                <div class="group-members">8 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">Yesterday</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channels View -->
+      <div class="content-section" *ngIf="activeMenu === 'channels'">
+        <div class="chat-section">
+          <div class="section-header">
+            <h4 class="section-title">All Channels</h4>
+          </div>
+          <div class="chat-list">
+            <div class="chat-item" (click)="selectChat('general')">
+              <div class="chat-avatar channel">
+                <span class="channel-hash">#</span>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">general</div>
+                <div class="chat-preview">Welcome to nCollab! 🎉</div>
+                <div class="channel-members">12 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">10:15 AM</span>
+              </div>
+            </div>
+
+            <div class="chat-item" (click)="selectChat('announcements')">
+              <div class="chat-avatar channel">
+                <span class="channel-hash">#</span>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">announcements</div>
+                <div class="chat-preview">New features coming next week</div>
+                <div class="channel-members">15 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">9:00 AM</span>
+                <div class="unread-badge">1</div>
+              </div>
+            </div>
+
+            <div class="chat-item" (click)="selectChat('random')">
+              <div class="chat-avatar channel">
+                <span class="channel-hash">#</span>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">random</div>
+                <div class="chat-preview">Anyone up for coffee? ☕</div>
+                <div class="channel-members">8 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">Yesterday</span>
+              </div>
+            </div>
+
+            <div class="chat-item" (click)="selectChat('dev-updates')">
+              <div class="chat-avatar channel">
+                <span class="channel-hash">#</span>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">dev-updates</div>
+                <div class="chat-preview">Latest deployment successful</div>
+                <div class="channel-members">6 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">Yesterday</span>
+              </div>
+            </div>
+
+            <div class="chat-item" (click)="selectChat('design-feedback')">
+              <div class="chat-avatar channel">
+                <span class="channel-hash">#</span>
+              </div>
+              <div class="chat-info">
+                <div class="chat-name">design-feedback</div>
+                <div class="chat-preview">UI mockups ready for review</div>
+                <div class="channel-members">4 members</div>
+              </div>
+              <div class="chat-meta">
+                <span class="chat-time">2 days ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="main-content">
+     <app-main></app-main>
+    </main>
+  </div>
+
+<!-- Modals -->
+<!-- Add User Modal -->
+<div class="modal-overlay" *ngIf="showAddUserModal" (click)="closeModal('addUser')">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2 class="modal-title">Add New User</h2>
+      <button class="close-btn" (click)="closeModal('addUser')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form (ngSubmit)="addUser()" #addUserForm="ngForm">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input 
+            type="text" 
+            id="firstName" 
+            name="firstName" 
+            [(ngModel)]="newUser.firstName" 
+            required 
+            class="form-input"
+            placeholder="Enter first name"
+          >
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input 
+            type="text" 
+            id="lastName" 
+            name="lastName" 
+            [(ngModel)]="newUser.lastName" 
+            required 
+            class="form-input"
+            placeholder="Enter last name"
+          >
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            [(ngModel)]="newUser.email" 
+            required 
+            class="form-input"
+            placeholder="Enter email address"
+          >
+        </div>
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select 
+            id="role" 
+            name="role" 
+            [(ngModel)]="newUser.role" 
+            required 
+            class="form-select"
+          >
+            <option value="">Select a role</option>
+            <option value="admin">Admin</option>
+            <option value="member">Member</option>
+            <option value="guest">Guest</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="department">Department</label>
+          <input 
+            type="text" 
+            id="department" 
+            name="department" 
+            [(ngModel)]="newUser.department" 
+            class="form-input"
+            placeholder="Enter department (optional)"
+          >
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="closeModal('addUser')">Cancel</button>
+      <button type="button" class="btn-primary" (click)="addUser()" [disabled]="!addUserForm.form.valid">Add User</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invite User Modal -->
+<app-invite-user 
+  [showInviteUserModal]="showInviteUserModal"
+  (closeModal)="closeModal($event)"
+  (inviteUsers)="inviteUsers()">
+</app-invite-user>
+
+<!-- Create Group Modal -->
+<app-create-group 
+  [showCreateGroupModal]="showCreateGroupModal"
+  (closeModal)="closeModal($event)"
+  (createGroup)="createGroup()">
+</app-create-group>
+
+<!-- Create Channel Modal -->
+<app-create-channel 
+  [showCreateChannelModal]="showCreateChannelModal"
+  (closeModal)="closeModal($event)"
+  (createChannel)="createChannel()">
+</app-create-channel>
+
+<!-- Status Message Modal -->
+<app-status-modal 
+  [showStatusModal]="showStatusModal"
+  (closeModal)="closeModal($event)"
+  (setStatusMessage)="setStatusMessage()"
+  (clearStatusMessage)="clearStatusMessage()">
+</app-status-modal>
+
+<!-- Add User to Group Modal -->
+<app-add-user-to-group 
+  [showAddUserToGroupModal]="showAddUserToGroupModal"
+  (closeModal)="closeModal($event)"
+  (addUserToGroup)="addUserToGroup()">
+</app-add-user-to-group>
+
+<!-- Delete Account Confirmation Modal -->
+<app-delete-account-confirm 
+  [showDeleteAccountModal]="showDeleteAccountModal"
+  (closeModal)="closeModal($event)"
+  (deleteAccount)="deleteAccount()">
+</app-delete-account-confirm>
+
+<!-- Global Alert Container -->
+<app-alert-container></app-alert-container>

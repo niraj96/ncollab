@@ -1,0 +1,8 @@
+<div class="alert-container-wrapper">
+  <app-alert
+    *ngFor="let alert of alerts; trackBy: trackByAlertId"
+    [config]="alert"
+    (close)="onAlertClose(alert.id)"
+    (action)="onAlertAction($event, alert.id)">
+  </app-alert>
+</div>
